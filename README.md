@@ -87,50 +87,89 @@ $ go run cmd/server/main.go drop
 
 ---
 
-## 📌 **4. API Endpoints**
+## 📌 **4. Building for Production**
 
-### **Authentication Module**
-| Method | Endpoint   | Description               |
-|--------|------------|---------------------------|
-| POST   | `/login`   | Login to get a JWT token  |
-
-#### **Example Request**
-```json
-{
-  "email": "admin@example.com",
-  "password": "password"
-}
+### **1. Build the application**
+To build the application for production, use the following command:
+```bash
+go build -o dist/todo-api cmd/server/main.go
 ```
 
-#### **Example Response**
-```json
-{
-  "token": "your_jwt_token"
-}
+This will create a binary file in the `dist/` directory.
+
+### **2. Build for specific environments**
+You can build the application for different operating systems and architectures using the `GOOS` and `GOARCH` environment variables.
+
+#### **Build for Linux**
+```bash
+GOOS=linux GOARCH=amd64 go build -o dist/todo-api-linux cmd/server/main.go
+```
+
+#### **Build for Windows**
+```bash
+GOOS=windows GOARCH=amd64 go build -o dist/todo-api.exe cmd/server/main.go
+```
+
+#### **Build for macOS**
+```bash
+GOOS=darwin GOARCH=amd64 go build -o dist/todo-api-macos cmd/server/main.go
 ```
 
 ---
 
-### **Task Module**
-| Method | Endpoint               | Description               |
-|--------|-------------------------|---------------------------|
-| POST   | `/tasks`               | Create a new task         |
-| GET    | `/tasks`               | Retrieve all tasks        |
-| GET    | `/tasks/:id`           | Retrieve a task by ID     |
-| PUT    | `/tasks/:id`           | Update an existing task   |
-| PATCH  | `/tasks/:id/completed` | Mark a task as completed  |
-| DELETE | `/tasks/:id`           | Delete a task             |
+### **3. Running the built application**
+After building the application, you can run it directly from the `dist/` directory.
 
-### **User Module**
-| Method | Endpoint       | Description           |
-|--------|-----------------|-----------------------|
-| POST   | `/users`       | Create a new user     |
-| GET    | `/users`       | Retrieve all users    |
-| GET    | `/users/:id`   | Retrieve a user by ID |
+#### **Run the application**
+```bash
+cd dist
+./todo-api
+```
+
+#### **Ensure `.env` is present**
+Make sure to copy the `.env` file to the `dist/` directory before running the application:
+```bash
+cp .env dist/
+cd dist
+./todo-api
+```
 
 ---
 
-## 📌 **5. Environment Variables**
+## 📌 **5. Deploying with Docker**
+
+### **1. Build Docker image**
+To deploy the application using Docker, build the Docker image:
+```bash
+docker build -t todo-api .
+```
+
+### **2. Run the Docker container**
+Run the container with the following command:
+```bash
+docker run -d -p 8080:8080 --name todo-api --env-file .env todo-api
+```
+
+- **`-p 8080:8080`**: Maps port 8080 of the container to port 8080 on the host machine.
+- **`--env-file .env`**: Loads environment variables from the `.env` file.
+
+### **3. Push Docker image to a registry**
+If you want to deploy the application to a remote server, push the Docker image to a registry like Docker Hub:
+```bash
+docker tag todo-api your-dockerhub-username/todo-api
+docker push your-dockerhub-username/todo-api
+```
+
+### **4. Pull and run the image on the server**
+On the production server, pull the image and run the container:
+```bash
+docker pull your-dockerhub-username/todo-api
+docker run -d -p 8080:8080 --env-file .env your-dockerhub-username/todo-api
+```
+
+---
+
+## 📌 **6. Environment Variables**
 The application uses environment variables to configure the database connection. Create a `.env` file in the root directory with the following content:
 
 ```env
@@ -140,25 +179,6 @@ DB_USER=your_username
 DB_PASSWORD=your_password
 DB_NAME=your_database
 JWT_SECRET=your_secret_key
-```
-
----
-
-## 📌 **6. Docker Support**
-You can run the application using Docker and Docker Compose.
-
-### **Build and run the app**
-```bash
-# Build the Docker image
-$ docker-compose build
-
-# Start the containers
-$ docker-compose up
-```
-
-### **Stop the app**
-```bash
-$ docker-compose down
 ```
 
 ---
