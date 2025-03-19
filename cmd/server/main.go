@@ -23,10 +23,10 @@ func main() {
     database.Connect()
 
     // Khởi tạo các phụ thuộc
-    taskHandler, userHandler := initializeHandlers()
+    taskHandler, userHandler, authHandler := initializeHandlers()
 
     // Thiết lập router
-    r := setupRouter(taskHandler, userHandler)
+    r := setupRouter(taskHandler, userHandler, authHandler)
 
     // Chạy server
     log.Println("🚀 Starting server on :8080...")
@@ -60,36 +60,53 @@ func handleCommand(command string) {
     }
 }
 
-// initializeHandlers khởi tạo các handler cho Task và User
-func initializeHandlers() (delivery.TaskHandler, delivery.UserHandler) {
+// initializeHandlers khởi tạo các handler cho Task, User, và Auth
+func initializeHandlers() (delivery.TaskHandler, delivery.UserHandler, delivery.AuthHandler) {
+    // Khởi tạo repository
     taskRepo := repository.TaskRepository{}
-    taskUseCase := usecase.TaskUseCase{Repo: taskRepo}
-    taskHandler := delivery.TaskHandler{Usecase: taskUseCase}
-
     userRepo := repository.UserRepository{}
-    userUseCase := usecase.UserUseCase{Repo: userRepo}
-    userHandler := delivery.UserHandler{Usecase: userUseCase}
 
-    return taskHandler, userHandler
+    // Khởi tạo usecase
+    taskUseCase := usecase.TaskUseCase{Repo: taskRepo}
+    userUseCase := usecase.UserUseCase{Repo: userRepo}
+    authUseCase := usecase.AuthUseCase{UserRepo: userRepo}
+
+    // Khởi tạo handler
+    taskHandler := delivery.TaskHandler{Usecase: taskUseCase}
+    userHandler := delivery.UserHandler{Usecase: userUseCase}
+    authHandler := delivery.AuthHandler{Usecase: authUseCase}
+
+    return taskHandler, userHandler, authHandler
 }
 
 // setupRouter thiết lập router và định nghĩa các endpoint
-func setupRouter(taskHandler delivery.TaskHandler, userHandler delivery.UserHandler) *gin.Engine {
+func setupRouter(taskHandler delivery.TaskHandler, userHandler delivery.UserHandler, authHandler delivery.AuthHandler) *gin.Engine {
     r := gin.Default()
     r.Use(gin.Logger(), gin.Recovery())
 
-    // Định nghĩa các endpoint cho module Task
-    r.POST("/tasks", taskHandler.CreateTask)
-    r.GET("/tasks", taskHandler.GetTasks)
-    r.GET("/tasks/:id", taskHandler.GetTaskByID)
-    r.PUT("/tasks/:id", taskHandler.UpdateTask)
-    r.PATCH("/tasks/:id/completed", taskHandler.MarkTaskCompleted)
-    r.DELETE("/tasks/:id", taskHandler.DeleteTask)
+    // Các API không yêu cầu xác thực
+    r.POST("/login", authHandler.Login)
 
-    // Định nghĩa các endpoint cho module User
-    r.POST("/users", userHandler.CreateUser)
-    r.GET("/users", userHandler.GetAllUsers)
-    r.GET("/users/:id", userHandler.GetUserByID)
+    // Middleware xác thực JWT
+    authMiddleware := delivery.AuthMiddleware()
+
+    // Các API yêu cầu xác thực
+    auth := r.Group("/")
+    auth.Use(authMiddleware)
+    {
+        // Task routes
+        auth.POST("/tasks", taskHandler.CreateTask)
+        auth.GET("/tasks", taskHandler.GetTasks)
+        auth.GET("/tasks/:id", taskHandler.GetTaskByID)
+        auth.PUT("/tasks/:id", taskHandler.UpdateTask)
+        auth.PATCH("/tasks/:id/completed", taskHandler.MarkTaskCompleted)
+        auth.DELETE("/tasks/:id", taskHandler.DeleteTask)
+
+        // User routes
+        auth.POST("/users", userHandler.CreateUser)
+        auth.GET("/users", userHandler.GetAllUsers)
+        auth.GET("/users/:id", userHandler.GetUserByID)
+    }
 
     return r
 }

@@ -11,6 +11,7 @@ It supports **CRUD operations** for managing tasks and users and is **containeri
 - **GORM** - ORM for PostgreSQL
 - **Docker & Docker Compose** - Containerization
 - **godotenv** - Environment variable management
+- **JWT** - Authentication and Authorization
 
 ---
 
@@ -30,17 +31,40 @@ It supports **CRUD operations** for managing tasks and users and is **containeri
   - Retrieve all users
   - Retrieve a user by ID
 
+### **Authentication Module**
+- Manage authentication with the following endpoints:
+  - Login to get a JWT token
+
 ---
 
 ## 📌 **3. Running the app**
 
-### **Run the server**
+### **1. Initialize the project**
+Before running the application, ensure that the Go module is initialized and all dependencies are installed.
+
+#### **Step 1: Initialize `go.mod`**
+Run the following command in the root directory of the project to initialize the Go module:
+```bash
+go mod init todo-api
+```
+
+#### **Step 2: Install dependencies**
+Run the following command to install all required libraries:
+```bash
+go get ./...
+```
+
+---
+
+### **2. Run the server**
 ```bash
 # Start the server
 $ go run cmd/server/main.go
 ```
 
-### **Manual database operations**
+---
+
+### **3. Manual database operations**
 You can manually manage the database using the following commands:
 
 #### **Setup the database**
@@ -64,6 +88,28 @@ $ go run cmd/server/main.go drop
 ---
 
 ## 📌 **4. API Endpoints**
+
+### **Authentication Module**
+| Method | Endpoint   | Description               |
+|--------|------------|---------------------------|
+| POST   | `/login`   | Login to get a JWT token  |
+
+#### **Example Request**
+```json
+{
+  "email": "admin@example.com",
+  "password": "password"
+}
+```
+
+#### **Example Response**
+```json
+{
+  "token": "your_jwt_token"
+}
+```
+
+---
 
 ### **Task Module**
 | Method | Endpoint               | Description               |
@@ -93,6 +139,7 @@ DB_PORT=5432
 DB_USER=your_username
 DB_PASSWORD=your_password
 DB_NAME=your_database
+JWT_SECRET=your_secret_key
 ```
 
 ---
@@ -117,7 +164,7 @@ $ docker-compose down
 ---
 
 ## 📌 **7. Future Improvements**
-- Add authentication and authorization
+- Add role-based authorization
 - Implement pagination for large datasets
 - Add more modules (e.g., Projects, Comments)
 - Write unit tests for all modules
